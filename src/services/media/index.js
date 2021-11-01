@@ -9,56 +9,75 @@ import { readMedias, writeMedia } from "../../library/fs-tools.js"
 
 const mediasRouter = express.Router()
 
+mediasRouter.get("/", async (req, res, next) => {
+    try {
+        const media = await readMedias()
+     
+        res.send(media)
+    } catch (error) {
+        console.log(error)
+        next(error)
+    }
 
+})
 mediasRouter.post("/", mediasValidation, async (req, res, next) => {
     try {
-        const mediaValidation = validationResult(req)
-
-        if (!mediaValidation.isEmpty()) {
-            next(createHttpError(400, { mediaValidation }))
+        const notValidated = validationResult(req)
+            
+        if (!notValidated.isEmpty()) {
+            next(createHttpError(400, { notValidated }))
         } else {
             const newMedia = { ...req.body, createdAt: new Date(), imdbID: uniqid() }
-            const media = await readMedias()
+            const medias = await readMedias()
+            
+            medias.push(newMedia)
 
-            media.push(newMedia)
-
-            await writeMedia(media)
-            res.status(201).send({ imdbID: newPost.imdbID })
+            await writeMedia(medias)
+            res.status(201).send({ imdbID: newMedia.imdbID })
         }
     } catch (error) {
         next(error)
     }
 })
-mediasRouter.get("/", async (req, res, next) => {
-    try {
-        const media = await readMedias()
 
-        res.send(media)
+mediasRouter.get("/:imdbID", async (req, res, next) => {
+    try {
+     const medias = await readMedias()
+
+     const media = medias.find(media=>media.imdbID === req.params.imdbID)
+     if(media){
+         res.send(media)
+     }else{
+         next(createHttpError(404), `Media with id of ${req.params.imdbID} is not found`)
+     }
     } catch (error) {
         next(error)
     }
-
 })
-
-mediasRouter.get("/:id", async (req, res, next) => {
+mediasRouter.put("/:imdbID", async (req, res, next) => {
     try {
+const medias = await readMedias()
+const index = medias.findIndex(media => media.imdbID === req.params.imdbID)
+const mediaToEdit = medias[index]
 
+const updatedParams = req.body
+const updatedMedia = {...mediaToEdit, ...updatedParams}
+
+medias[index] = updatedMedia
+await writeMedia(medias)
+res.send(updatedMedia)
     } catch (error) {
-
+next(error)
     }
 })
-mediasRouter.put("/:id", async (req, res, next) => {
+mediasRouter.delete("/:imdbID", async (req, res, next) => {
     try {
-
+const medias = await readMedias()
+const notDeletedMedia = medias.filter(media => media.imdbID !== req.params.imdbID)
+await writeMedia(notDeletedMedia)
+res.status(204).send()
     } catch (error) {
-
-    }
-})
-mediasRouter.delete("/:id", async (req, res, next) => {
-    try {
-
-    } catch (error) {
-
+next(error)
     }
 })
 
