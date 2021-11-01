@@ -5,6 +5,8 @@ import { validationResult } from "express-validator"
 import { mediasValidation } from "./validation.js"
 import { reviewsValidation } from "./validation.js"
 import { readMedias, writeMedia } from "../../library/fs-tools.js"
+import { savePoster } from "../../library/fs-tools.js"
+import multer from "multer"
 
 
 const mediasRouter = express.Router()
@@ -78,6 +80,16 @@ await writeMedia(notDeletedMedia)
 res.status(204).send()
     } catch (error) {
 next(error)
+    }
+})
+
+// ----------------------TO POST A POSTER FOR-----------------------
+mediasRouter.post("/:imdbID/poster", multer().single("poster"), async (req,res,next) => {
+    try {
+        await savePoster(req.file.originalname, req.file.buffer)
+        res.send("image uploaded successfully")
+    } catch (error) {
+        next(error)
     }
 })
 

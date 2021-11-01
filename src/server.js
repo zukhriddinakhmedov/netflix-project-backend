@@ -8,7 +8,9 @@ import { badRequestHandler, unauthorisedErrorHandler, notFoundErrorHandler, inte
 
 const server = express()
     
+const publicFolderPath = join(process.cwd(), "/public")
     // ************************** MIDDLEWARES *********************
+    server.use(express.static(publicFolderPath))
     server.use(cors())
     server.use(express.json())
     
